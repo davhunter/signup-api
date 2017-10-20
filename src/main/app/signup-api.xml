@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+    <http:listener-config name="signup-api-httpListenerConfig" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <apikit:config name="signup-api-config" raml="signup-api.raml" consoleEnabled="false" doc:name="Router"/>
+    <spring:beans>
+        <spring:import resource="classpath:deloitte_mulesoft_error_helper.xml"/>
+    </spring:beans>
+    <http:request-config name="HTTP_Request_Configuration" host="MuleServ" port="8083" basePath="/customer-api" doc:name="HTTP Request Configuration">
+        <http:raml-api-configuration location="customer-api.raml"/>
+    </http:request-config>
+    <flow name="signup-api-main">
+        <http:listener config-ref="signup-api-httpListenerConfig" path="/api/*" doc:name="HTTP"/>
+        <apikit:router config-ref="signup-api-config" doc:name="APIkit Router"/>
+        <exception-strategy ref="deloitte_globalExceptionStrategy" doc:name="Reference Exception Strategy"/>
+    </flow>
+    <flow name="signup-api-console">
+        <http:listener config-ref="signup-api-httpListenerConfig" path="/console/*" doc:name="HTTP"/>
+        <apikit:console config-ref="signup-api-config" doc:name="APIkit Console"/>
+    </flow>
+    <flow name="get:/user-info/{ID}:signup-api-config">
+        <http:request config-ref="HTTP_Request_Configuration" path="/customers/{ID}" method="GET" doc:name="HTTP">
+            <http:request-builder>
+                <http:query-param paramName="forceError" value="#[message.inboundProperties.'http.query.params'.forceError]"/>
+                <http:uri-param paramName="ID" value="#[flowVars.ID]"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="200,404"/>
+        </http:request>
+        <validation:is-true message="Customer Not Found" exceptionClass="com.deloitte.customerapi.exceptions.CustomerNotFoundException" expression="#[message.inboundProperties['http.status'] == '200']" doc:name="Validate Response"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+    </flow>
+</mule>

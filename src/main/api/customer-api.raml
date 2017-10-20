@@ -1,0 +1,38 @@
+#%RAML 1.0
+title: Customer API
+version: 1.0
+baseUri: http://localhost:8081/customer-api
+
+types:
+  Customer: 
+    type: object
+    properties:
+      firstName:
+        type: string
+        required: true
+      lastName:
+        type: string
+        required: true
+  Error: !include Error.raml
+
+/customers:
+  description: API for multiple customers not implemented
+  /{ID}:
+    description: returns a specific customer
+    get:
+      queryParameters:
+        forceError:
+          type: boolean
+          required: false
+          default: false
+      responses:
+        200:
+          body:
+            application/json:
+              type: Customer
+              example: |
+                {"firstName": "Alfred", "lastName": "Neuman"}
+        404:
+          body:
+            application/json:
+              type: Error

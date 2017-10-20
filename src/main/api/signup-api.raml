@@ -1,0 +1,34 @@
+#%RAML 1.0
+title: Signup API
+version: 1.0
+baseUri: http://localhost:8081/signup-api
+
+types:
+  Error: !include Error.raml
+  User:
+    type: object
+    properties:
+      firstName:
+        type: string
+        required: true
+      lastName:
+        type: string
+        required: true
+
+/user-info:
+  /{ID}:
+    get:
+      queryParameters:
+        forceError:
+          type: boolean
+          required: false
+          default: false
+      responses:
+        200:
+          body:
+            application/json:
+              type: User
+        404:
+          body:
+            application/json:
+              type: Error
